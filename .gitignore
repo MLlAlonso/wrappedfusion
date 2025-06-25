@@ -1,0 +1,14 @@
+venv/
+.venv/
+.env
+__pycache__/
+*.pyc
+.vscode/
+*.db
+*.sqlite
+*.sqlite3
+*.log
+logs/
+
+# Archivos de macOS
+.DS_Store
