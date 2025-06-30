@@ -1,67 +1,87 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WrappedFusion</title>
-    <link rel="stylesheet" href="/static/src/styles/main.css" />
+    <link rel="stylesheet" href="/static/src/styles/main.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  </head>
-
-  <body>
+</head>
+<body>
     <header class="header">
-      <h1 class="header__title">WrappedFusion</h1>
-      <p class="header__description"> Tu resumen de música de Spotify y YouTube </p>
-
-      <button id="spotify-auth-btn" class="header__button"> Autenticar con Spotify </button>
-
-      <button id="google-auth-btn" class="header__button"> Autenticar con Google (YouTube) </button>
-
-      <div id="auth-status-message" style="margin-top: 1rem; color: green"></div>
+        <h1 class="header__title">WrappedFusion</h1>
+        <p class="header__description">Tu resumen de música de Spotify y YouTube</p>
+        <button id="spotify-auth-btn" class="header__button">Autenticar con Spotify</button>
+        <button id="google-auth-btn" class="header__button">Autenticar con Google (YouTube)</button>
+        <button id="sync-spotify-btn" class="header__button" style="background-color: #28a745;">Sincronizar Spotify</button>
+        <div id="auth-status-message" style="margin-top: 1rem; color: green;"></div>
     </header>
 
     <main class="main">
+        <section id="general-stats" class="section">
+            <h2>Estadísticas Generales</h2>
+            <div class="card">
+                <h3>Minutos Escuchados Totales</h3>
+                <p id="total-minutes">Cargando...</p>
+                <div class="chart-container">
+                    <canvas id="minutesChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Top 10 Canciones (General)</h3>
+                <ul id="general-top-songs">
+                    <li>Cargando...</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Top 5 Artistas (General)</h3>
+                <ul id="general-top-artists">
+                    <li>Cargando...</li>
+                </ul>
+            </div>
+        </section>
 
-      <section id="general-stats" class="section">
-        <h2>Estadísticas Generales</h2>
+        <section id="spotify-stats" class="section">
+            <h2>Estadísticas de Spotify</h2>
+            <div class="card">
+                <h3>Minutos Escuchados Spotify</h3>
+                <p id="spotify-minutes">Cargando...</p>
+            </div>
+            <div class="card">
+                <h3>Top 10 Canciones Spotify</h3>
+                <ul id="spotify-top-songs">
+                    <li>Cargando...</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Top 5 Artistas Spotify</h3>
+                <ul id="spotify-top-artists">
+                    <li>Cargando...</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Canciones Favoritas Spotify</h3>
+                <ul id="spotify-liked-tracks">
+                    <li>Cargando...</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Playlists Spotify</h3>
+                <ul id="spotify-playlists">
+                    <li>Cargando...</li>
+                </ul>
+            </div>
+        </section>
 
-        <div class="card">
-          <h3>Minutos Escuchados Totales</h3>
-          <p id="total-minutes">Cargando...</p>
-          <div class="chart-container">
-            <canvas id="minutesChart"></canvas>
-          </div>
-        </div>
-
-        <div class="card">
-          <h3>Top 10 Canciones (General)</h3>
-          <ul id="general-top-songs">
-            <li>Cargando...</li>
-          </ul>
-        </div>
-
-        <div class="card">
-          <h3>Top 5 Artistas (General)</h3>
-          <ul id="general-top-artists">
-            <li>Cargando...</li>
-          </ul>
-        </div>
-
-      </section>
-
-      <section id="spotify-stats" class="section">
-        <h2>Estadísticas de Spotify</h2>
-      </section>
-
-      <section id="youtube-stats" class="section">
-        <h2>Estadísticas de YouTube</h2>
-      </section>
+        <section id="youtube-stats" class="section">
+            <h2>Estadísticas de YouTube</h2>
+        </section>
     </main>
 
     <footer class="footer">
-      <p>&copy; 2025 WrappedFusion. Proyecto Personal.</p>
+        <p>&copy; 2025 WrappedFusion. Proyecto Personal.</p>
     </footer>
 
     <script src="/static/src/js/main.js"></script>
-  </body>
+</body>
 </html>
