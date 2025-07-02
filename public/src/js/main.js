@@ -1,9 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('WrappedFusion frontend principal cargado.');
+    console.log('Spotify Fusion Service frontend principal cargado.');
 
     const spotifyAuthBtn = document.getElementById('spotify-auth-btn');
-    const googleAuthBtn = document.getElementById('google-auth-btn');
-    const syncSpotifyBtn = document.getElementById('sync-spotify-btn'); 
+    const syncSpotifyBtn = document.getElementById('sync-spotify-btn');
     const authStatusMessage = document.getElementById('auth-status-message');
 
     // Elementos para mostrar estadísticas de Spotify
@@ -13,15 +12,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const spotifyLikedTracksEl = document.getElementById('spotify-liked-tracks');
     const spotifyPlaylistsEl = document.getElementById('spotify-playlists');
 
-    // Elementos para estadísticas generales 
-    const totalMinutesEl = document.getElementById('total-minutes');
-    const generalTopSongsEl = document.getElementById('general-top-songs');
-    const generalTopArtistsEl = document.getElementById('general-top-artists');
+    // Gráfica de minutos
     const minutesChartCtx = document.getElementById('minutesChart').getContext('2d');
 
     // --- Constantes de Backend ---
     const BACKEND_BASE_URL = 'http://127.0.0.1:8000';
 
+    // --- Funciones de Utilidad para PKCE ---
     function dec2hex(dec) { return ('0' + dec.toString(16)).substr(-2); }
     function generateRandomString() {
         const arr = new Uint8Array(32);
@@ -92,8 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
             authStatusMessage.style.color = 'green';
             authStatusMessage.textContent = 'Datos de Spotify sincronizados con éxito!';
             
-            // Recargar estadísticas después de sincronizar
-            loadSpotifyStats();
+            loadSpotifyStats(); // Recargar estadísticas después de sincronizar
 
         } catch (error) {
             console.error('Error al sincronizar datos de Spotify:', error);
@@ -108,7 +104,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const userId = 1;
             const response = await fetch(`${BACKEND_BASE_URL}/api/v1/spotify/stats/${userId}`);
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorData = await response.json();
+                throw new Error(`HTTP error! status: ${response.status}. Detail: ${errorData.detail || 'No detail.'}`);
             }
             const data = await response.json();
             console.log('Estadísticas de Spotify cargadas:', data);
@@ -128,36 +125,28 @@ document.addEventListener('DOMContentLoaded', () => {
             spotifyPlaylistsEl.innerHTML = data.playlists.map(playlist => `<li>${playlist}</li>`).join('');
             if (data.playlists.length === 0) spotifyPlaylistsEl.innerHTML = '<li>No hay playlists disponibles.</li>';
 
-            // Actualizar estadísticas generales
-            totalMinutesEl.textContent = `${data.total_spotify_minutes || 0} minutos (Solo Spotify)`;
-            updateMinutesChart(data.total_spotify_minutes || 0, 0); 
+            // Actualizar gráfica de minutos
+            updateMinutesChart(data.total_spotify_minutes || 0);
 
         } catch (error) {
             console.error('Error al cargar estadísticas de Spotify:', error);
-            spotifyMinutesEl.textContent = 'Error al cargar los datos.';
+            if (spotifyMinutesEl) {
+                spotifyMinutesEl.textContent = 'Error al cargar los datos.';
+            }
         }
     }
 
-    // Función para actualizar la gráfica de minutos 
-    let minutesChartInstance = null; 
+    // Actualizar gráfica de minutos
+    let minutesChartInstance = null;
 
-    function updateMinutesChart(spotifyMinutes, youtubeMinutes) {
-        const totalMinutes = spotifyMinutes + youtubeMinutes;
+    function updateMinutesChart(spotifyMinutes) {
         const data = {
-            labels: ['Spotify', 'YouTube', 'Total'],
+            labels: ['Spotify'],
             datasets: [{
                 label: 'Minutos Escuchados',
-                data: [spotifyMinutes, youtubeMinutes, totalMinutes],
-                backgroundColor: [
-                    'rgba(29, 185, 84, 0.6)',
-                    'rgba(255, 0, 0, 0.6)',
-                    'rgba(75, 192, 192, 0.6)'
-                ],
-                borderColor: [
-                    'rgba(29, 185, 84, 1)',
-                    'rgba(255, 0, 0, 1)',
-                    'rgba(75, 192, 192, 1)'
-                ],
+                data: [spotifyMinutes],
+                backgroundColor: ['rgba(29, 185, 84, 0.6)'],
+                borderColor: ['rgba(29, 185, 84, 1)'],
                 borderWidth: 1
             }]
         };
@@ -193,16 +182,11 @@ document.addEventListener('DOMContentLoaded', () => {
         spotifyAuthBtn.addEventListener('click', initiateSpotifyAuth);
     }
 
-    if (googleAuthBtn) {
-        googleAuthBtn.addEventListener('click', () => {
-            alert('Autenticación con Google aún no implementada.');
-        });
-    }
-
     if (syncSpotifyBtn) {
         syncSpotifyBtn.addEventListener('click', syncSpotifyData);
     }
 
+    // Cargar estadísticas de Spotify al iniciar la página principal
     if (window.location.pathname !== '/static/callback/spotify.html') {
         loadSpotifyStats();
     }

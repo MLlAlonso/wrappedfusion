@@ -5,14 +5,11 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from app.config.settings import settings
 from app.database.models.user import User
-from app.database.models.track import Track, TrackArtist
-from app.database.models.artist import Artist
-from app.database.models.spotify_play_history import SpotifyPlayHistory
-from app.database.models.user_spotify_history_summary import UserSpotifyHistorySummary
 
 class SpotifyService:
     """
-    Servicio para interactuar con la API de Spotify, encapsula la lógica de refresh de tokens y las llamadas a la API.
+    Servicio para interactuar con la API de Spotify.
+    Encapsula la lógica de refresh de tokens y las llamadas a la API.
     """
     SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
     SPOTIFY_API_BASE_URL = "https://api.spotify.com/v1"
@@ -23,15 +20,9 @@ class SpotifyService:
         self.client = httpx.AsyncClient()
 
     async def __aenter__(self):
-        """
-        Asegura que el cliente HTTP se inicie.
-        """
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """
-        Asegura que el cliente HTTP se cierre.
-        """
         await self.client.aclose()
 
     async def _refresh_access_token(self) -> bool:
@@ -72,7 +63,7 @@ class SpotifyService:
 
             self.db.add(self.user)
             self.db.commit()
-            self.db.refresh(self.user) 
+            self.db.refresh(self.user)
             print(f"DEBUG: Token de acceso de Spotify refrescado con éxito para el usuario {self.user.id}.")
             return True
         except httpx.HTTPStatusError as e:
@@ -86,10 +77,9 @@ class SpotifyService:
             print(f"ERROR: Error de DB al guardar token refrescado para el usuario {self.user.id}: {e}")
             raise Exception(f"Error de DB al guardar token refrescado: {e}")
 
-
     async def _get_api_data(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
-        Método genérico para realizar llamadas a la API de Spotify.
+        Asegura que el token de acceso esté refrescado antes de cada llamada.
         """
         if not await self._refresh_access_token():
             raise Exception("No se pudo refrescar/obtener un token de acceso válido para Spotify.")
@@ -126,7 +116,7 @@ class SpotifyService:
 
     async def get_user_liked_tracks(self, limit: int = 50, offset: int = 0) -> Dict[str, Any]:
         """
-        Canciones que el usuario ha guardado en su biblioteca.
+        Obtiene las canciones que el usuario ha guardado en su biblioteca.
         """
         return await self._get_api_data("/me/tracks", params={"limit": limit, "offset": offset})
 
@@ -143,7 +133,12 @@ class SpotifyService:
         """
         return await self._get_api_data("/me/playlists", params={"limit": limit, "offset": offset})
 
-    # Obtener detalles adicionales de artistas/tracks si es necesario
+    async def get_playlist_items(self, playlist_id: str, limit: int = 50, offset: int = 0) -> Dict[str, Any]:
+        """
+        Obtiene los tracks de una playlist específica.
+        """
+        return await self._get_api_data(f"/playlists/{playlist_id}/tracks", params={"limit": limit, "offset": offset})
+
     async def get_track_details(self, track_id: str) -> Dict[str, Any]:
         return await self._get_api_data(f"/tracks/{track_id}")
 
