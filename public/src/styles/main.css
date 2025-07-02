@@ -63,13 +63,32 @@
 }
 .main .section .card p, .main .section .card ul {
   color: #333;
-}
-.main .section .card ul {
-  list-style: none;
+  list-style: none; /* Asegura que no haya viñetas por defecto */
   padding: 0;
 }
 .main .section .card ul li {
-  margin-bottom: 0.3rem;
+  display: flex; /* Para alinear imagen y texto */
+  align-items: center;
+  margin-bottom: 0.5rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid #eaeaea; /* Separador sutil */
+  text-align: left; /* Alinea el texto a la izquierda dentro del li */
+}
+.main .section .card ul li:last-child {
+  border-bottom: none; /* No hay separador en el último elemento */
+}
+.main .section .card .item-image {
+  display: block; /* Asegura que la imagen se comporte como un bloque */
+  width: 50px; /* Tamaño fijo para las imágenes */
+  height: 50px;
+  border-radius: 4px; /* Bordes ligeramente redondeados */
+  margin-right: 10px; /* Espacio entre imagen y texto */
+  -o-object-fit: cover;
+     object-fit: cover; /* Asegura que la imagen cubra el área sin distorsionarse */
+  flex-shrink: 0; /* Evita que la imagen se encoja */
+}
+.main .section .card .item-image--round {
+  border-radius: 50%; /* Para artistas, hacer la imagen redonda */
 }
 .main .section .card .chart-container {
   position: relative;
@@ -111,5 +130,9 @@ body {
   .main .section .card .chart-container {
     width: 95%;
     height: 250px;
+  }
+  .main .section .card .item-image {
+    width: 40px; /* Un poco más pequeñas en móvil */
+    height: 40px;
   }
 }/*# sourceMappingURL=main.css.map */

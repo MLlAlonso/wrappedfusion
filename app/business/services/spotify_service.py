@@ -9,7 +9,6 @@ from app.database.models.user import User
 class SpotifyService:
     """
     Servicio para interactuar con la API de Spotify.
-    Encapsula la lógica de refresh de tokens y las llamadas a la API.
     """
     SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
     SPOTIFY_API_BASE_URL = "https://api.spotify.com/v1"
@@ -21,7 +20,6 @@ class SpotifyService:
 
     async def __aenter__(self):
         return self
-
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.client.aclose()
 
@@ -79,6 +77,7 @@ class SpotifyService:
 
     async def _get_api_data(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
+        Método genérico para realizar llamadas a la API de Spotify.
         Asegura que el token de acceso esté refrescado antes de cada llamada.
         """
         if not await self._refresh_access_token():
@@ -109,23 +108,49 @@ class SpotifyService:
 
     async def get_recently_played_tracks(self, limit: int = 50) -> List[Dict[str, Any]]:
         """
-        Obtiene las canciones reproducidas recientemente por el usuario de Spotify, solo devuelve hasta 50 elementos.
+        Obtiene las canciones reproducidas recientemente por el usuario de Spotify.
         """
         data = await self._get_api_data("/me/player/recently-played", params={"limit": limit})
+        for item in data.get("items", []):
+            if item.get("track") and item["track"].get("album") and item["track"]["album"].get("images"):
+                images = item["track"]["album"]["images"]
+                if images:
+                    item["track"]["album_image_url"] = images[0]["url"]
         return data.get("items", [])
 
     async def get_user_liked_tracks(self, limit: int = 50, offset: int = 0) -> Dict[str, Any]:
         """
         Obtiene las canciones que el usuario ha guardado en su biblioteca.
         """
-        return await self._get_api_data("/me/tracks", params={"limit": limit, "offset": offset})
+        data = await self._get_api_data("/me/tracks", params={"limit": limit, "offset": offset})
+        # Añadir lógica para obtener la mejor imagen de portada
+        for item in data.get("items", []):
+            if item.get("track") and item["track"].get("album") and item["track"]["album"].get("images"):
+                images = item["track"]["album"]["images"]
+                if images:
+                    item["track"]["album_image_url"] = images[0]["url"]
+        return data
 
     async def get_user_top_items(self, item_type: str, limit: int = 5, time_range: str = "medium_term") -> List[Dict[str, Any]]:
         """
         Obtiene los top artistas o canciones del usuario.
         """
         data = await self._get_api_data(f"/me/top/{item_type}", params={"limit": limit, "time_range": time_range})
-        return data.get("items", [])
+        items = data.get("items", [])
+        
+        if item_type == 'artists':
+            for artist_data in items:
+                if artist_data.get("images"):
+                    images = artist_data["images"]
+                    if images:
+                        artist_data["image_url"] = images[0]["url"]
+        elif item_type == 'tracks':
+            for track_data in items:
+                if track_data.get("album") and track_data["album"].get("images"):
+                    images = track_data["album"]["images"]
+                    if images:
+                        track_data["album_image_url"] = images[0]["url"] 
+        return items
 
     async def get_user_playlists(self, limit: int = 50, offset: int = 0) -> Dict[str, Any]:
         """
@@ -135,9 +160,10 @@ class SpotifyService:
 
     async def get_playlist_items(self, playlist_id: str, limit: int = 50, offset: int = 0) -> Dict[str, Any]:
         """
-        Obtiene los tracks de una playlist específica.
+        Obtiene los ítems (tracks) de una playlist específica.
         """
-        return await self._get_api_data(f"/playlists/{playlist_id}/tracks", params={"limit": limit, "offset": offset})
+        data = await self._get_api_data(f"/playlists/{playlist_id}/tracks", params={"limit": limit, "offset": offset})
+        return data
 
     async def get_track_details(self, track_id: str) -> Dict[str, Any]:
         return await self._get_api_data(f"/tracks/{track_id}")

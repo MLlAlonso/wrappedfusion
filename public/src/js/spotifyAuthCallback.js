@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Spotify Auth Callback Script cargado.');
     const authStatusMessage = document.getElementById('auth-status-message');
-    const BACKEND_BASE_URL = 'http://127.0.0.1:8000'; 
+    const BACKEND_BASE_URL = 'http://127.0.0.1:8000';
 
     // --- Funciones de Utilidad para PKCE ---
     function dec2hex(dec) { return ('0' + dec.toString(16)).substr(-2); }
@@ -34,13 +34,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (code) {
             console.log('Código de autorización de Spotify recibido:', code);
             const code_verifier = localStorage.getItem('spotify_code_verifier');
-
             if (!code_verifier) {
                 console.error("No se encontró el code_verifier en localStorage. Re-autentica.");
                 if (authStatusMessage) authStatusMessage.textContent = 'Error: Code Verifier faltante. Por favor, re-autentica.';
                 return;
             }
-
             try {
                 const response = await fetch(`${BACKEND_BASE_URL}/api/v1/auth/spotify/callback`, {
                     method: 'POST',
@@ -69,6 +67,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log("Respuesta del backend:", data);
                 if (authStatusMessage) authStatusMessage.textContent = 'Autenticación de Spotify exitosa!';
                 localStorage.removeItem('spotify_code_verifier');
+                localStorage.setItem('user_id', data.user_id);
+                localStorage.setItem('spotify_id', data.spotify_id);
+
                 setTimeout(() => {
                     window.location.href = '/';
                 }, 2000);
@@ -84,6 +85,5 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log("Página de callback cargada sin parámetros de autorización.");
         }
     }
-
     handleAuthCallback();
 });

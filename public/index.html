@@ -5,21 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spotify Fusion Service</title>
     <link rel="stylesheet" href="/static/src/styles/main.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="icon" type="image/png" href="/static/src/img/Ml.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
     <header class="header">
-        <h1 class="header__title">Spotify Fusion Service</h1>
+        <h1 class="header__title">Spotify Fusion</h1>
         <p class="header__description">Tus estadísticas personales de Spotify</p>
-        <button id="spotify-auth-btn" class="header__button">Autenticar con Spotify</button>
-        <button id="sync-spotify-btn" class="header__button" style="background-color: #28a745;">Sincronizar Datos</button>
+        
+        <div id="auth-controls">
+            <button id="spotify-auth-btn" class="header__button">Autenticar con Spotify</button>
+            <button id="sync-spotify-btn" class="header__button" style="background-color: #28a745; display: none;">Sincronizar Datos</button>
+            <button id="logout-btn" class="header__button" style="background-color: #dc3545; display: none;">Cerrar Sesión</button>
+        </div>
+        
         <div id="auth-status-message" style="margin-top: 1rem; color: green;"></div>
+        <div id="current-user-info" style="margin-top: 0.5rem; color: #555;"></div>
     </header>
 
     <main class="main">
-        <section id="spotify-stats" class="section">
+        <section id="spotify-stats" class="section" style="display: none;">
             <h2>Estadísticas de Spotify</h2>
 
             <div class="card">

@@ -24,6 +24,7 @@ async def get_or_create_artist(db: Session, artist_data: Dict[str, Any]) -> Arti
     """
     spotify_id = artist_data.get("id")
     artist_name = artist_data.get("name")
+    image_url = artist_data.get("image_url")
 
     artist = None
     if spotify_id:
@@ -33,16 +34,17 @@ async def get_or_create_artist(db: Session, artist_data: Dict[str, Any]) -> Arti
         artist = db.query(Artist).filter(Artist.name == artist_name).first()
 
     if not artist:
-        artist = Artist(name=artist_name, spotify_id=spotify_id)
+        artist = Artist(name=artist_name, spotify_id=spotify_id, image_url=image_url)
         db.add(artist)
-        db.flush() # Asegura que el ID del nuevo artista esté disponible
+        db.flush()
         print(f"DEBUG: Nuevo artista creado: {artist_name} (Spotify ID: {spotify_id})")
     else:
         if not artist.spotify_id and spotify_id:
             artist.spotify_id = spotify_id
-            db.add(artist)
+        if not artist.image_url and image_url:
+            artist.image_url = image_url
+        db.add(artist)
         print(f"DEBUG: Artista existente encontrado: {artist_name} (ID: {artist.id})")
-    
     return artist
 
 async def get_or_create_track(db: Session, track_data: Dict[str, Any]) -> Track:
@@ -53,6 +55,7 @@ async def get_or_create_track(db: Session, track_data: Dict[str, Any]) -> Track:
     track_title = track_data.get("name")
     duration_ms = track_data.get("duration_ms")
     isrc = track_data.get("external_ids", {}).get("isrc")
+    album_image_url = track_data.get("album_image_url")
 
     track = None
     if spotify_id:
@@ -66,7 +69,8 @@ async def get_or_create_track(db: Session, track_data: Dict[str, Any]) -> Track:
             title=track_title,
             duration_ms=duration_ms,
             isrc=isrc,
-            spotify_id=spotify_id
+            spotify_id=spotify_id,
+            album_image_url=album_image_url
         )
         db.add(track)
         db.flush()
@@ -78,6 +82,8 @@ async def get_or_create_track(db: Session, track_data: Dict[str, Any]) -> Track:
             track.isrc = isrc
         if not track.duration_ms and duration_ms:
             track.duration_ms = duration_ms
+        if not track.album_image_url and album_image_url:
+            track.album_image_url = album_image_url
         db.add(track)
         print(f"DEBUG: Track existente encontrado: {track_title} (ID: {track.id})")
 
@@ -114,12 +120,14 @@ async def get_or_create_track(db: Session, track_data: Dict[str, Any]) -> Track:
 
     return track
 
-
 @router.post("/spotify/sync_data/{user_id}", summary="Sincronizar datos de Spotify para un usuario")
 async def sync_spotify_data(
     user_id: int,
     db: Session = Depends(get_db)
 ):
+    """
+    Inicia la sincronización de datos de Spotify para el usuario especificado.
+    """
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado.")
@@ -129,32 +137,23 @@ async def sync_spotify_data(
             # --- 1. Sincronizar Historial de Reproducción ---
             print(f"DEBUG: Sincronizando historial de reproducción de Spotify para el usuario {user_id}...")
             recently_played = await spotify_service.get_recently_played_tracks(limit=50)
-
             user_summary = db.query(UserSpotifyHistorySummary).filter_by(user_id=user_id).first()
             if not user_summary:
                 user_summary = UserSpotifyHistorySummary(user_id=user_id, last_synced_track_ids=json.dumps([]))
                 db.add(user_summary)
-                db.flush()
-            
+                db.flush()         
             last_synced_ids = set(json.loads(user_summary.last_synced_track_ids))
             newly_processed_track_ids = []
-            
             total_minutes_added_this_sync = 0
-
             for item in reversed(recently_played):
                 track_data = item.get("track")
                 played_at_str = item.get("played_at")
-                
                 if not track_data or not played_at_str:
                     continue
-
                 spotify_track_id = track_data.get("id")
-                
-                unique_play_identifier = f"{spotify_track_id}_{played_at_str}"
-                
+                unique_play_identifier = f"{spotify_track_id}_{played_at_str}"     
                 if unique_play_identifier not in last_synced_ids:
                     track = await get_or_create_track(db, track_data)
-                    
                     play_history_entry = SpotifyPlayHistory(
                         user_id=user_id,
                         track_id=track.id,
@@ -164,39 +163,29 @@ async def sync_spotify_data(
                         duration_ms=track.duration_ms or 0
                     )
                     db.add(play_history_entry)
-                    
                     total_minutes_added_this_sync += (track.duration_ms or 0) / 60000
                     print(f"DEBUG: Añadiendo {track.title} ({track.duration_ms/60000:.2f} min). Total añadido: {total_minutes_added_this_sync:.2f} min.")
-                
                 newly_processed_track_ids.append(unique_play_identifier)
-
-
             user_summary.last_synced_track_ids = json.dumps(newly_processed_track_ids[-50:])
             user_summary.total_minutes_listened += int(total_minutes_added_this_sync)
             user_summary.last_sync_at = datetime.utcnow()
             db.add(user_summary)
-            
             user.total_spotify_minutes = user_summary.total_minutes_listened
             db.add(user)
-
             db.commit()
-
             print(f"DEBUG: Sincronización de historial de Spotify completada para el usuario {user_id}. Minutos añadidos: {total_minutes_added_this_sync:.2f}")
 
-            # --- Sincronizar Canciones Favoritas (Liked Tracks) ---
+            # --- 2. Sincronizar Canciones Favoritas (Liked Tracks) ---
             print(f"DEBUG: Sincronizando canciones favoritas de Spotify para el usuario {user_id}...")
             liked_tracks_data = await spotify_service.get_user_liked_tracks(limit=50)
             for item in liked_tracks_data.get("items", []):
                 track_data = item.get("track")
                 if not track_data: continue
-
-                track = await get_or_create_track(db, track_data)
-                
+                track = await get_or_create_track(db, track_data)             
                 existing_liked = db.query(SpotifyLikedTrack).filter_by(
                     user_id=user_id,
                     track_id=track.id
                 ).first()
-
                 if not existing_liked:
                     liked_entry = SpotifyLikedTrack(
                         user_id=user_id,
@@ -208,22 +197,19 @@ async def sync_spotify_data(
                     print(f"DEBUG: Añadida canción favorita: {track.title}")
             db.commit()
 
-            # --- Sincronizar Playlists ---
+            # --- 3. Sincronizar Playlists ---
             print(f"DEBUG: Sincronizando playlists de Spotify para el usuario {user_id}...")
-            playlists_data = await spotify_service.get_user_playlists(limit=50) # Obtener las primeras 50 playlists
+            playlists_data = await spotify_service.get_user_playlists(limit=50)
             for playlist_item in playlists_data.get("items", []):
                 spotify_playlist_id = playlist_item.get("id")
                 playlist_name = playlist_item.get("name")
                 description = playlist_item.get("description")
                 is_public = playlist_item.get("public")
-                total_tracks = playlist_item.get("tracks", {}).get("total") 
-
-                # Buscar playlist existente o crear una nueva
+                total_tracks = playlist_item.get("tracks", {}).get("total")
                 existing_playlist = db.query(SpotifyPlaylist).filter_by(
                     user_id=user_id,
                     spotify_playlist_id=spotify_playlist_id
                 ).first()
-
                 if not existing_playlist:
                     playlist_entry = SpotifyPlaylist(
                         user_id=user_id,
@@ -237,15 +223,14 @@ async def sync_spotify_data(
                     db.flush()
                     print(f"DEBUG: Añadida playlist: {playlist_name}")
                 else:
-                    # Actualizar la playlist 
                     existing_playlist.playlist_name = playlist_name
                     existing_playlist.description = description
                     existing_playlist.is_public = is_public
                     existing_playlist.total_tracks = total_tracks
-                    db.add(existing_playlist) 
-                    playlist_entry = existing_playlist 
+                    db.add(existing_playlist)
+                    playlist_entry = existing_playlist
                     print(f"DEBUG: Actualizada playlist: {playlist_name}")
-            db.commit() 
+            db.commit()
 
             return JSONResponse(
                 status_code=status.HTTP_200_OK,
@@ -272,42 +257,42 @@ async def get_spotify_stats(
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado.")
 
-    # Minutos escuchados totales
+    # 1. Minutos escuchados totales
     user_summary = db.query(UserSpotifyHistorySummary).filter_by(user_id=user_id).first()
     total_spotify_minutes = user_summary.total_minutes_listened if user_summary else 0
 
-    # Top 10 Canciones
+    # 2. Top 10 Canciones
     top_tracks_query = (
-        db.query(Track.title, Track.id, func.count(SpotifyPlayHistory.track_id).label("play_count"))
+        db.query(Track.title, Track.id, Track.album_image_url, func.count(SpotifyPlayHistory.track_id).label("play_count"))
         .join(SpotifyPlayHistory, SpotifyPlayHistory.track_id == Track.id)
         .filter(SpotifyPlayHistory.user_id == user_id)
-        .group_by(Track.title, Track.id)
+        .group_by(Track.title, Track.id, Track.album_image_url)
         .order_by(func.count(SpotifyPlayHistory.track_id).desc())
         .limit(10)
         .all()
     )
     top_tracks_spotify = [
-        {"title": track.title, "play_count": track.play_count} for track in top_tracks_query
+        {"title": track.title, "play_count": track.play_count, "image_url": track.album_image_url} for track in top_tracks_query 
     ]
 
-    # Top 5 Artistas (de historial de reproducción)
+    # 3. Top 5 Artistas
     top_artists_query = (
-        db.query(Artist.name, Artist.id, func.count(SpotifyPlayHistory.platform_artist_id).label("play_count"))
+        db.query(Artist.name, Artist.id, Artist.image_url, func.count(SpotifyPlayHistory.platform_artist_id).label("play_count"))
         .join(TrackArtist, TrackArtist.track_id == SpotifyPlayHistory.track_id)
         .join(Artist, Artist.id == TrackArtist.artist_id)
         .filter(SpotifyPlayHistory.user_id == user_id)
-        .group_by(Artist.name, Artist.id)
+        .group_by(Artist.name, Artist.id, Artist.image_url)
         .order_by(func.count(SpotifyPlayHistory.platform_artist_id).desc())
         .limit(5)
         .all()
     )
     top_artists_spotify = [
-        {"name": artist.name, "play_count": artist.play_count} for artist in top_artists_query
+        {"name": artist.name, "play_count": artist.play_count, "image_url": artist.image_url} for artist in top_artists_query 
     ]
 
-    # Canciones Favoritas (de historial de reproducción)
+    # 4. Canciones Favoritas
     liked_tracks_query = (
-        db.query(Track.title, Track.id)
+        db.query(Track.title, Track.id, Track.album_image_url)
         .join(SpotifyLikedTrack, SpotifyLikedTrack.track_id == Track.id)
         .filter(SpotifyLikedTrack.user_id == user_id)
         .order_by(SpotifyLikedTrack.added_at.desc())
@@ -315,10 +300,10 @@ async def get_spotify_stats(
         .all()
     )
     liked_tracks_spotify = [
-        {"title": track.title} for track in liked_tracks_query
+        {"title": track.title, "image_url": track.album_image_url} for track in liked_tracks_query
     ]
 
-    # Playlists (solo nombres por ahora)
+    # 5. Playlists
     playlists_query = (
         db.query(SpotifyPlaylist.playlist_name)
         .filter(SpotifyPlaylist.user_id == user_id)
@@ -326,7 +311,6 @@ async def get_spotify_stats(
         .all()
     )
     playlists_spotify = [p.playlist_name for p in playlists_query]
-
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
