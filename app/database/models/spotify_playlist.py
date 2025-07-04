@@ -16,10 +16,8 @@ class SpotifyPlaylistTrack(Base):
         return f"<SpotifyPlaylistTrack(playlist_id={self.playlist_id}, track_id={self.track_id})>"
 
 class SpotifyPlaylist(Base):
-    """
-    Almacena información sobre las playlists de Spotify de un usuario.
-    """
     __tablename__ = "spotify_playlists"
+
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     playlist_name = Column(String(255), nullable=False)
@@ -27,10 +25,10 @@ class SpotifyPlaylist(Base):
     description = Column(Text, nullable=True)
     is_public = Column(Boolean, default=False, nullable=False)
     total_tracks = Column(Integer, nullable=True)
+    image_url = Column(String(512), nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
-    # Relaciones
     user = relationship("User", backref="spotify_playlists")
     tracks = relationship("Track", secondary="spotify_playlist_tracks", backref="spotify_playlists")
 

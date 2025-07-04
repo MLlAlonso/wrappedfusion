@@ -1,76 +1,86 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Spotify Fusion Service</title>
-    <link rel="stylesheet" href="/static/src/styles/main.css">
-    <link rel="icon" type="image/png" href="/static/src/img/Ml.png">
+    <link rel="stylesheet" href="/static/src/styles/main.css" />
+    <link rel="icon" type="image/png" href="/static/src/img/Ml.png" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
     <header class="header">
-        <h1 class="header__title">Spotify Fusion</h1>
+        <h1 class="header__title">Spotify Fusion Service</h1>
+        <div id="current-user-info" class="user-id-info"></div>
         <p class="header__description">Tus estadísticas personales de Spotify</p>
-        
+
         <div id="auth-controls">
-            <button id="spotify-auth-btn" class="header__button">Autenticar con Spotify</button>
-            <button id="sync-spotify-btn" class="header__button" style="background-color: #28a745; display: none;">Sincronizar Datos</button>
-            <button id="logout-btn" class="header__button" style="background-color: #dc3545; display: none;">Cerrar Sesión</button>
+            <button id="spotify-auth-btn" class="header__button">
+                Autenticar con Spotify
+            </button>
+            <button id="sync-spotify-btn" class="header__button" style="background-color: #28a745; display: none">
+                Sincronizar Datos
+            </button>
+            <button id="logout-btn" class="header__button" style="background-color: #dc3545; display: none">
+                Cerrar Sesión
+            </button>
         </div>
-        
-        <div id="auth-status-message" style="margin-top: 1rem; color: green;"></div>
-        <div id="current-user-info" style="margin-top: 0.5rem; color: #555;"></div>
+
+        <div id="auth-status-message" class="status-message"></div>
     </header>
 
     <main class="main">
-        <section id="spotify-stats" class="section" style="display: none;">
-            <h2>Estadísticas de Spotify</h2>
-
-            <div class="card">
-                <h3>Minutos Escuchados Spotify</h3>
-                <p id="spotify-minutes">Cargando...</p>
+        <section id="spotify-stats" class="section" style="display: none">
+            <div class="card full-width">
+                <h2>Minutos Escuchados</h2>
+                <p id="spotify-minutes" class="minutes-display">Cargando...</p>
                 <div class="chart-container">
                     <canvas id="minutesChart"></canvas>
                 </div>
             </div>
 
-            <div class="card">
-                <h3>Top 10 Canciones Spotify</h3>
-                <ul id="spotify-top-songs">
+            <div class="card-row">
+                <div class="card half-width">
+                    <h2>Top 10 Canciones</h2>
+                    <ul id="spotify-top-songs" class="item-list">
+                        <li>Cargando...</li>
+                    </ul>
+                </div>
+
+                <div class="card half-width">
+                    <h2>Tus me gusta</h2>
+                    <ul id="spotify-liked-tracks" class="item-list">
+                        <li>Cargando...</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card full-width">
+                <h2>Playlist</h2>
+                <ul id="spotify-playlists" class="playlist-grid">
                     <li>Cargando...</li>
                 </ul>
             </div>
 
-            <div class="card">
-                <h3>Top 5 Artistas Spotify</h3>
-                <ul id="spotify-top-artists">
+            <div class="card full-width">
+                <h2>Top 5 Artistas</h2>
+                <ul id="spotify-top-artists" class="item-list artist-list">
                     <li>Cargando...</li>
                 </ul>
             </div>
-
-            <div class="card">
-                <h3>Canciones Favoritas Spotify</h3>
-                <ul id="spotify-liked-tracks">
-                    <li>Cargando...</li>
-                </ul>
-            </div>
-
-            <div class="card">
-                <h3>Playlists Spotify</h3>
-                <ul id="spotify-playlists">
-                    <li>Cargando...</li>
-                </ul>
-            </div>
-
         </section>
     </main>
 
     <footer class="footer">
-        <p>&copy; 2025 Spotify Fusion Service by <a href="https://mllalonso.github.io/landing-pages-suite/" target="_blank">Mikkel Llaven Alonso</a>.</p>
+        <p>
+            &copy; 2025 Spotify Fusion Service by
+            <a href="https://mllalonso.github.io/landing-pages-suite/" target="_blank">Mikkel Llaven Alonso</a>.
+        </p>
     </footer>
 
     <script src="/static/src/js/main.js"></script>
 </body>
+
 </html>
