@@ -9,12 +9,13 @@
     <link rel="icon" type="image/png" href="/static/src/img/Ml.png" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-
+ 
 <body>
     <header class="header">
-        <h1 class="header__title">Spotify Fusion Service</h1>
-        <div id="current-user-info" class="user-id-info"></div>
-        <p class="header__description">Tus estadísticas personales de Spotify</p>
+        <div class="user-header">
+            <div id="current-user-info" class="user-id-info"></div>
+            <p class="header__description">Tus estadísticas personales de Spotify</p>
+        </div>
 
         <div id="auth-controls">
             <button id="spotify-auth-btn" class="header__button">
@@ -23,15 +24,15 @@
             <button id="sync-spotify-btn" class="header__button" style="background-color: #28a745; display: none">
                 Sincronizar Datos
             </button>
-            <button id="logout-btn" class="header__button" style="background-color: #dc3545; display: none">
+            <button id="logout-btn" class="header__button" style="display: none">
                 Cerrar Sesión
             </button>
         </div>
-
-        <div id="auth-status-message" class="status-message"></div>
     </header>
-
+    
     <main class="main">
+        <h1 class="header__title">Spotify Fusion Service</h1>
+        <div id="auth-status-message" class="status-message"></div>
         <section id="spotify-stats" class="section" style="display: none">
             <div class="card full-width">
                 <h2>Minutos Escuchados</h2>

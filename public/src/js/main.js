@@ -224,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateUIForAuthenticatedUser() {
-        currentUserInfo.textContent = `Usuario: ${currentSpotifyId}`;
+        currentUserInfo.textContent = ` ${currentSpotifyId}`;
         spotifyAuthBtn.style.display = 'none';
         syncSpotifyBtn.style.display = 'inline-block';
         logoutBtn.style.display = 'inline-block';
